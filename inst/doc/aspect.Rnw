@@ -1,0 +1,550 @@
+%\VignetteIndexEntry{aspect} 
+
+\documentclass[nojss]{jss}
+
+\usepackage{amsmath, amsfonts, thumbpdf}
+\usepackage{float, amssymb}
+\usepackage{hyperref}
+
+\newcommand{\sgn}{\operatorname{sgn}}
+
+
+\author{Patrick Mair \\Wirtschaftsuniversit\"at Wien \And 
+        Jan de Leeuw\\University of California, Los Angeles
+       }
+\title{A General Framework for Multivariate Analysis with Optimal Scaling: The \proglang{R} Package \pkg{aspect}}
+
+\Plainauthor{Patrick Mair, Jan de Leeuw} %% comma-separated
+\Plaintitle{A general framework for multivariate analysis with optimal scaling: The R package aspect} %% without formatting
+\Shorttitle{Aspects in \proglang{R}} %% a short title (if necessary)
+
+
+\Abstract{In a series of papers de Leeuw developed a general framework for multivariate analysis with optimal scaling. The basic idea of optimal scaling is to transform the observed variables (categories) in terms of quantifications. In the approach presented here the multivariate data are collected into a multivariable. An \emph{aspect} of a multivariable is a function that is used to measure how well the multivariable satisfies some criterion. Basically we can think of two different families of aspects which unify many well-known multivariate methods: Correlational aspects based on sums of correlations, eigenvalues and determinants which unify multiple regression, path analysis, correspondence analysis, nonlinear PCA, etc. Non-correlational aspects which linearize bivariate regressions and can be used for SEM preprocessing with categorical data. Additionally, other aspects can be established that do not correspond to classical techniques at all. By means of the \proglang{R} package \pkg{aspect} we provide a unified majorization-based implementation of this methodology. Using various data examples we will show the flexibility of this approach and how the optimally scaled results can be represented using graphical tools provided by the package. 
+}
+
+\Keywords{aspect, lineals, optimal scaling, bilinearizability, \proglang{R}}
+\Plainkeywords{aspect, lineals, optimal scaling, bilinearizability, R} 
+
+%% publication information
+%% NOTE: This needs to filled out ONLY IF THE PAPER WAS ACCEPTED.
+%% If it was not (yet) accepted, leave them commented.
+%% \Volume{13}
+%% \Issue{9}
+%% \Month{September}
+%% year{2004}
+%% \Submitdate{2004-09-29}
+%% \Acceptdate{2004-09-29}
+
+%% The address of (at least) one author should be given
+%% in the following format:
+\Address{
+  Patrick Mair\\
+  Department of Statistics and Mathematics\\
+  Wirtschaftsuniversit\"at Wien\\
+  E-mail: \email{patrick.mair@wu-wien.ac.at}\\
+  URL: \url{http://statmath.wu-wien.ac.at/~mair/}
+}
+%% It is also possible to add a telephone and fax number
+%% before the e-mail in the following format:
+%% Telephone: +43/1/31336-5053
+%% Fax: +43/1/31336-734
+
+%% for those who use Sweave please include the following line (with % symbols):
+%% need no \usepackage{Sweave.sty}
+
+%% end of declarations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\section{Introduction}
+\citet{Gifi:1990} offers a comprehensive collection of nonlinear multivariate methods based on optimal scaling. The starting point of the underlying analysis is a 0-1 dummy matrix based on the data which are considered as categorical. Subsequently, a loss function involving the (unknown) object and category scores is established. During the iterations we stretch/squeeze the variables and compute category scores such that they are optimal in the sense of a minimal loss function. This procedure is referred to as \emph{optimal scaling}. The simplest method is \emph{homogeneity analysis} which is also known as \emph{multiple correspondence analysis}. By imposing restrictions on the quantification ranks we get \emph{nonlinear principal component analysis} and by defining sets \emph{nonlinear multi-set canonical correlation analysis}. More detailed descriptions with a strong computational background and, correspondingly, the presentation of the \proglang{R} \citep{R:09} package \pkg{homals} are given in \citet{deLeeuw+Mair:2007a}. 
+
+In this paper, which is also part of our \emph{PsychoR} project (\url{http://r-forge.r-project.org/projects/psychor/}), we somewhat extend the Gifi approach in terms of a general system for multivariate analysis which we denote as the \emph{aspect} framework. The theoretical foundation of this approach was already given by \citet{deLeeuw:1988b}, some of it also in \citet{deLeeuw:1982}, and further discussed in \citet{deLeeuw:1988a}, \citet{deLeeuw:1993}, and \citet{deLeeuw+Michailidis+Wang:1999}. Essentially, we can subdivide this framework into two parts: optimization of functions of the correlation matrix on the one hand, and optimization of non-correlational loss functions on the other hand. In the first case we speak of \emph{correlational aspects}. In the second case, where we mainly focus on linearizing regressions (LINEALS), we speak of \emph{non-correlational aspects}. Eventually we get optimally scaled unidimensional category quantifications (scores). These scores and the corresponding correlation matrix, respectively, can be used for further multivariate modeling. 
+
+As \citet{deLeeuw+Michailidis+Wang:1999} point out, in many situations (e.g., social and behavioral sciences) we do not know exactly how to express the variables. For instance, we can think of regression examples where we can apply logarithmic, exponential, or square root transformations to the data. In the Gifi (and in our aspect) framework, the transformations are unknown: We scale (i.e., transform or quantify) the categories with respect to a certain criterion. In the particular aspect approach we select an target function, investigate how this function varies over all feasible transformations of the variables, and, finally, quantify the categories accordingly. 
+
+In the next sections we start with some basic definitions, present correlational aspects and their optimization by means of majorization. Then, as a particular non-correlational aspect, we focus on LINEALS, discuss implications of this approach and focus on LINEALS as a \emph{structural equation models} (SEM) preprocessing tool for categorical data. The applied part of the paper focuses on the \proglang{R} package \pkg{aspect} by means of various examples. 
+
+
+\section{Basic definitions and notations}
+\subsection{Cones in  n-space: The theoretical framework}
+Let us assume that our data are collected in a $n \times m$ matrix $H = (h_1, h_2, \ldots, h_m)$ with $i = 1, \ldots n$ and $j = 1, \ldots, m$. From a general perspective, multivariate analysis involves computations on $m$ random variables $H_1, H_2,\ldots,H_m$ , which we can collect into a so called \emph{multivariable}. An \emph{aspect} $\phi$ of a multivariable is a well-defined function that is used to measure how well the multivariable satisfies some desirable criterion \citep[][p. 529]{deLeeuw+Michailidis+Wang:1999}. At this point we can think of many different criteria; thus, many different aspects can be defined. 
+
+So far we did not mention that our approach will rescale the categories of each $h_j$ by means of optimal scaling. A convenient mathematical formulation is offered by the concept of cones. Note that we are not only interested in the variables as we observe them but rather in transformations of the observed data (monotonic, polynomial, ``splinical''). If one such transformation or re-expression of the variable suits our criterion better than the original expression, we use the transformed version \citep{deLeeuw:1988a}. So let us assume that the observed $h_j$ and its transformations are in a known closed convex cone $\mathcal{K}_j$, which is a subset of $\mathbb{R}^n$. Hence, in our multivariate setting, we have the cones $\mathcal{K}_1, \mathcal{K}_2, \ldots \mathcal{K}_m$. Various cones are important: $\mathcal{K}$ can be a polyhedral convex cone of monotone transformations, a linear subspace of low-order polynomial transformations, a linear subspace for imputation of missing data, or a whole space for latent variables. A thorough historical discussion of the cone concept in connection with well-known multivariate techniques can be found in \citet{deLeeuw:1988b}. 
+
+\subsection{Dummy matrix and category scores: Practical issues}
+As mentioned above, we emphasize optimal scaling of categorical variables where each variable $H_j$ has number of categories $k_j$. For each variable we define an indicator or dummy matrix $G_j$ of dimension $n \times k_j$. Within each row $i$ we have one non-zero element indicating in which category of variable $j$ observation $i$ falls. These indicator matrices can be collected in an indicator supermatrix $G=(G_1|\ldots|G_m)$ of dimension $n \times K$ where $K = \sum_{j=1}^m k_j$. The contingency table of variables $j$ and $l$ is $C_{jl}=G_j'G_{l}$. Similar to $G$ we can define the $K\times K$ supermatrix $C$ which is known as the \emph{Burt matrix}. These notations bring us closer to correspondence analysis (CA) which, within the context of our PsychoR project, is described in \citet{deLeeuw+Mair:2007b}. We think of CA and related methods mainly in an analytical way, as opposed to the (more common) geometrical approach. 
+
+The crucial part of the whole computation is the determination of the optimally scaled category scores $y_j$ for each variable. The $y_j$ are vectors of length $k_j$ which are normalized, either to $y_j' D_j y_j = 1$ or to $y_j' D_j y_j = N$ where $D_j$ is the diagonal matrix with the univariate margins on the diagonal (i.e. $D_j = C_{jj}$). Moreover we require \(y_j\in\mathcal{K}_j\), where \(\mathcal{K}_j\) is a suitable cone in \(\mathbb{R}^{k_j}\). Consequently 
+\begin{equation}
+\label{eq:covel}
+s_{jl} = y_j' C_{jl} y_{l}
+\end{equation}
+are the elements of the covariance matrix $S(\mathbf{Y})$ of the transformed variables. As quoted in the last section we work with cones and to exclude trivial solutions we have to impose normalization. This implies that, rather then using $S(\mathbf{Y})$, for correlational aspects we will use the correlation matrix $R(\mathbf{Y})$ with its elements $r_{jl}$. 
+
+An additional task in optimal scaling are restrictions on the scale levels of the variables. Basically, we regard each variable as categorical. A nominal scale level involves no restrictions on the resulting scores. An ordinal scale level requires monotonicity and numerical variables additionally require equidistance between the scores. For Gifi methods the formulas are given in \citet{deLeeuw+Mair:2007a} and, consequently, implemented in the \pkg{homals} package. In our aspect framework the task it quite simple. Regardless whether we have correlational or non-correlational aspects, all that is needed to impose ordinal scale levels is to perform isotone regression within each iteration of the optimization. We use the Pool-Adjacent-Violators Algorithm \citep[PAVA; see e.g. ][]{Barlow+Batholomew+Bremner+Brunk:1972} which is implemented in the \pkg{isotone} package \citep{deLeeuw+Hornik+Mair:2009}. This guarantees monotonically increasing category scores. 
+
+
+%----------------------------------- begin correlational aspects ------------------------------
+\section{Correlational aspects and their optimization}
+\label{sec:aspect}
+\subsection{Types of correlational aspects}
+\label{sec:asptype}
+First we examine aspects directly defined on the correlation matrix. Formally, we study problems of the form $\phi(R(\mathbf{Y}))$. If we have only $m = 2$ variables we only have one correlation coefficient and, therefore only one aspect we can study: The variation of the correlation coefficient under the choice of category quantification. References and discussions for the $m = 2$ can be found in \citet{deLeeuw:1983}. 
+
+Here we focus on the general case of a multivariate dataset with $m$ variables. Basically, the aspect $\phi$ defines the criterion to be optimized and $\mathbf{Y} = (y_1, y_2, \ldots, y_m)$ with $y_j$ as the vector of category scores to be computed. From a general point of view the optimization problem can be formulated as 
+\begin{equation}
+\phi(R(\mathbf{Y})) \rightarrow \textrm{max}!
+\end{equation}
+In other words: We scale the observed variables (categories) in a manner such that an aspect of choice on the correlation matrix, which is based on these scores, is maximized. 
+ 
+At this point we specify various aspects based on $R(\mathbf{Y})$ which are referred to as \emph{correlational aspects}. Note that the following listing is just a collection of possible correlational aspects. In fact, the \pkg{aspect} package allows the user to specify his own aspects. For the following convex correlational aspects, which are pre-specified in the package, we also give the first order derivatives needed for optimization. The aspect specification in the package (by means of the aspect argument; see Section \ref{sec:pkg}) is given in parenthesis. 
+\begin{itemize}
+  \item \emph{Sum of correlations} (\code{"aspectSum"}): We can define a very simple aspect by taking the sum of the correlations. Optionally the correlations can be transformed by an even power $q>1$. Formally, the aspect and its derivative can be expressed as
+   \begin{subequations}
+   \begin{align}
+    \phi(R(\mathbf{Y})) &= \sum_{l<j}(r_{jl})^q \\
+    \frac{\partial \phi}{\partial r_{jl}} &= q(r_{jl})^{q-1}
+   \end{align}
+   \end{subequations}
+  where $r_{jl}$ are the elements of the correlation matrix $R$. Trivially, for $q = 1$ the elements of the matrix of partial derivatives $\partial \phi / \partial R$ are all 1. This special case corresponds to the SUMCOR model proposed by \citet{Horst:1961a, Horst:1965}; the $q = 2$ case to the SSQCOR method in \citet{Kettenring:1971}. 
+
+ \item \emph{Sum of absolute correlations} (\code{"aspectAbs"}): This aspect is based on the sum of absolute correlations (again, with the option of including power $q$, which now does not have to be even) and can be expressed as 
+   \begin{subequations}
+   \begin{align}
+    \phi(R(\mathbf{Y})) &= \sum_{l<j}|r_{jl}|^q\\
+    \frac{\partial \phi}{\partial r_{jl}} &= q \sgn(r_{jl})|r_{jl}|^{q-1}.
+   \end{align}
+   \end{subequations}
+Of course we need to take suitable measures if one of the correlations is zero, because in that case the derivative
+will not exist.  
+ \item \emph{Eigenvalue aspects} (\code{"aspectEigen"}): The basic definition of an eigenvalue aspect is to maximize the largest eigenvalue
+   $\lambda$ of $R$. The finding of such quantifications is the same as finding the dominant eigenvalue in MCA. In literature it was pointed out repeatedly \citep[e.g.][]{deLeeuw:2006} that the first MCA dimension should be distinguished clearly from the others because the remaining solutions provide additional (suboptimal) solutions of the stationary equations. In other words, maximizing the first eigenvalue implies that we want to scale the variables in a way that they are as uni-dimensional as possible. In the psychometric literature this approach is sometimes referred to as MAXVAR \citep{Horst:1961b, Horst:1965}. As a multidimensional generalization, we can look at the sum of the first $p$ eigenvalues
+   \begin{subequations}
+   \begin{align}
+    \phi(R(\mathbf{Y})) &= \sum_{j=1}^p \lambda_j(R) = \max_{Z'Z=I} tr(Z'RZ) \\
+    \frac{\partial \phi}{\partial R} &= \hat Z\hat Z'
+   \end{align}
+   \end{subequations}
+   where $\hat Z$ is the $m \times p$ matrix of the first $p$ eigenvectors. This generalization is used in nonlinear PCA \citep[cf.][]{deLeeuw:2006, deLeeuw+Mair:2007a}.  The aspect is convex because it is the pointwise maximum of a family of linear functions.
+ 
+  \item \emph{Determinant aspects} (\code{"aspectDeterminant"}): This aspect, which is related to the multinormal negative log-likelihood, corresponds to the GENVAR criterion by \citet{Steel:1951}. It can be expressed as
+   \begin{subequations} 
+   \begin{align}
+    \phi(R(\mathbf{Y})) &= -\log(\det(R)) \\
+    \frac{\partial \phi}{\partial R} &= R^{-1}.
+   \end{align}
+   \end{subequations}
+   The aspect $\log(\det(R))$ is concave, because it is the minimum over \(\Gamma\) of the linear functions \(\log(\det(\Gamma))+tr(\Gamma^{-1}R)\), and thus its negative is again convex. This aspect can also be defined using covariances instead of correlations \citep{deLeeuw:1988b}. The covariance-based version is related to the Box-Cox approach in regression \citep{Box+Cox:1964} and can be used for structural relation models. The latter relationship is studied extensively in \citet{Meijerink:1996}. 
+ 
+  \item \emph{Squared multiple correlations} (\code{"aspectSMC"}): One variable $j$ is defined as target (outcome, response) variable. The squared multiple correlation (SMC) of the $m-1$ remaining variables and its derivative can be written as 
+   \begin{subequations}
+   \label{eq:smc}
+   \begin{align}
+    \phi(R(\mathbf{Y})) &= \max_{\mathbf{b}_j}(1-\mathbf{b}_{(j)}'R\mathbf{b}_{(j)}) \\
+    \frac{\partial \phi}{\partial R} &= -\mathbf{\hat b}_{(j)}\mathbf{\hat b}_{(j)}'
+   \end{align}
+   \end{subequations}
+   where $\mathbf{b}_{(j)} = b_1, b_2, \ldots b_m$ is a vector of weights and restricted to have $b_j = 1$. This apect is the multiple regression aspect \citep[cf.][]{deLeeuw:1986}. Again it is convex, because it is a pointwise maximum of linear functions.
+ 
+  \item \emph{Sum of squared multiple correlations} (\code{"aspectSumSMC"}): The previous aspect can be extended in a way such that we compute SMC's between various combinations of indicators and target variables and take the sum of the resulting SMC's. Let us define $\mathcal J$ as an arbitrary index set for $j = 1, \ldots m$. Thus (\ref{eq:smc}) generalizes to  
+   \begin{subequations}
+   \begin{align}
+    \phi(R(\mathbf{Y})) &= \max_{\mathbf{b}_j} \sum_{j \in \mathcal J} (1-\mathbf{b}_{(j)}'R\mathbf{b}_{(j)}) \\
+    \frac{\partial \phi}{\partial R} &= \sum_{j \in \mathcal J} -\mathbf{\hat b}_{(j)}\mathbf{\hat b}_{(j)}'.
+   \end{align}
+   \end{subequations}
+   This aspect can be used for path analysis where $\mathcal J$ is determined by targets in the path model. Note that it is not necessary for $\mathbf{b}_{(j)}$ to contain all remaining predictors but rather those determining a path to target $j$. If $\mathcal J$ is the full index set and each predictor is regarded in each SMC (in other words we take the sum over all $m$ SMCs), this results in image analysis discussed in \citet{Guttman:1953}. The latter version is implemented in our package. 
+\end{itemize}
+These are the correlational aspects pre-specified in the \pkg{aspect} package. More aspects can be found in \citet{deLeeuw:1988b} and \citet{deLeeuw+Michailidis+Wang:1999}. As mentioned above, the package allows for the specification of user-defined aspects by means of functions which must return the function value of $\phi(R(\mathbf{Y}))$ and the derivatives $\partial \phi/\partial R$. 
+
+
+\subsection{Optimization using majorization}
+\label{sec:maj}
+This optimization problem is tackled by a majorization algorithm \citep{deLeeuw:1994}. Within our PsychoR project the majorization principle is introduced within the context of \emph{multidimensional scaling} (MDS) in the SMACOF paper \citep{deLeeuw+Mair:2008}. Here we will just quote briefly the most important results from \citet{deLeeuw:1988b} and \citet{deLeeuw+Michailidis+Wang:1999} which are relevant for our aspect framework.
+
+Majorization is a very general optimization approach. It is based on the principle that we have to find a minimum of a complicated function $f(x)$. The idea is to find a simple surrogate function $g(x,y)$, which for fixed $y$, is larger than $f(x)$: We say that $g$ majorizes $f$. This surrogate function is then subject of optimization. In our correlational aspect setting $\phi(R(\mathbf{Y}))$ has to be maximized. We have to make sure that $\phi$ is convex. As we indicated above, most of the interesting aspects fulfill these assumptions \citep{deLeeuw:1988b}. 
+
+Within each majorization step $k$ we have to update the category scores $y_j$ for a particular variable $j$ at a time, recompute the aspect including it derivatives $\partial \phi/\partial r_{jl}$ and then update $y_j$ for the subsequent variable $j$. At the optimum, the following stationary equation holds \citep{deLeeuw:1988a}:
+\begin{equation}
+\label{eq:statio}
+\sum_{l=1}^m  \frac{\partial \phi}{\partial r_{jl}} C_{jl} y_l = \lambda_jD_jy_j.
+\end{equation}
+If the convex aspect is not differentiable we can substitute any subgradient for the partial derivatives. The corresponding Langrange multipliers $\lambda_j$ are 
+\begin{equation}
+\label{eq:lm}
+\lambda_j = \sum_{l=1}^m \frac{\partial \phi}{\partial r_{jl}} r_{jl}.
+\end{equation}
+Based on theorems in \citet{deLeeuw:1988b} and \citet{deLeeuw+Michailidis+Wang:1999} the update for the category quantifications for variable $j$ is given by
+\begin{subequations}
+\begin{eqnarray}
+\label{eq:thupdate}
+\widetilde{y_j}^{(k+1)} = \mathop{\sum_{l=1}^m}_{l \neq j}  \frac{\partial \phi}{\partial r_{jl}} C_{jl} y_l^{(k)}, \\
+\label{eq:thnorm}
+y_j^{(k+1)} = \textrm{NORM}\left(\textrm{PROJ}_j\left(\widetilde{y_j}^{(k+1)}\right)\right),
+\end{eqnarray}
+\end{subequations}
+where \(\textrm{PROJ}_j\) is projection on the cone \(\mathcal{K}_j\).
+Within each iteration $k$  we update the category scores using (\ref{eq:thupdate}). The resulting $\widetilde{y_j}^{(k+1)}$ have to be projected and normalized by means of (\ref{eq:thnorm}) such that $y_j'^{(k+1)'} D_j^{} y_j^{(k+1)} = n$. We perform these steps for each variable $j$ and convergence is reached when $|\phi(R(\mathbf{Y}^{(k+1)}))-\phi(R(\mathbf{Y}^{(k)}))| < \varepsilon$. Convergence is proved (for convex aspects) in \citet{deLeeuw:1988b}. Eventually, we get optimal scored categories (optimal with respect to the corresponding aspect) which we can organize as $n \times m$ score data matrix. This score matrix, or the corresponding correlation matrix based on Pearson correlations, can be used for subsequent analyzes.  
+
+
+
+
+%-------------------------- LINEALS -------------------------------
+
+\section{Non-correlational aspects: Linearizing regressions}
+\label{sec:lineals}
+\subsection{Bilinearizability}
+\label{sec:bilin}
+Before we describe the LINEALS approach we elaborate general statements about the property of \emph{bilinearizability}. Bilinearizability means that we can find transformations of the variables such that all bivariate regressions are exactly linear. In the following paragraphs we present some conditions, implications, and consequences of bilinearizability. In these discussions we must clearly distinguish between bilinearizability as a population characteristic and as a sample characteristic. 
+
+Having $m = 2$ variables only, linearization is achieved if \citep[see][]{Hirschfeld:1935}
+\begin{subequations}
+\begin{eqnarray}
+Cy_2 &= rD_1y_1 \\
+C'y_1 &= rD_2y_2.
+\end{eqnarray}
+\end{subequations}
+This equation system can be solved by \emph{singular value decomposition} (SVD) of $D_1^{-1/2}CD_2^{-1/2}$. In fact, this is what simple CA does \citep[see e.g.][]{deLeeuw+Mair:2007b}. In other words, if we perform optimal scaling for the $m = 2$ case (e.g. using any aspect), we always achieve bilinearizability. This is true for any discrete bivariate distribution, either population or sample.
+
+In the $m > 2$ case things become more complicated. For this case, requiring bivariate linearity amounts to \citep[cf.][]{deLeeuw:1982}
+\begin{equation}
+\label{eq:bilin}
+C_{jl}y_l = r_{jl}D_jy_j,
+\end{equation}
+where $j$ and $l$ represent variable indices. The crucial question at this point is: Under which conditions can we achieve bivariate linearization for the $m > 2$ case? To examine this question we can summarize the following statements about bilinearizability, based on elaborations in de Leeuw's preceeding papers :
+\begin{itemize}
+ \item The $m=2$ case: As mentioned above, simple CA linearizes the regressions by means of SVD.
+
+ \item Binary variables: This case is trivial since having two categories only we always achieve linearization  \citep[][p.27]{Bekker+deLeeuw:1988}.
+
+ \item Bilinearizable distributions: Assuming bilinearizability of the population distribution is weaker than assuming multivariate normality or multivariate ellipticity \citep[][p. 446]{deLeeuw:1988a}. Bilinearizability also applies to mixtures of standardized multinormals or to Yule's \emph{strained multinormal}\footnote{The strained multinormal was introduced by \citet[][p. 613]{Yule:1912}. This distribution implies that the observed variables are smooth monotonic (i.e. strained) transformations of multinormals.} family. For Yule's family, aspect-based techniques ``unstrain'' the distribution by finding the inverse transformations which makes the distribution of the variables multinormal \citep{deLeeuw:1993, deLeeuw+Michailidis+Wang:1999}. 
+ 
+ \item Complete bilinearizability: In this even more restrictive case, bilinearizability holds for each dimension of an MCA solution. The conditions are that there exist matrices \(Y_j\) with \(Y_j'D_jY_j=I\) such that
+ \begin{equation}
+\label{eq:bilin}
+C_{jl}Y_l = D_jY_j\Gamma_{jl},
+\end{equation}
+with \(\Gamma_{jl}\) diagonal. The continuous multinormal statisfies these equations with \(Y_j\) the Hermite polynomials.
+
+ \item In a data matrix with bilinearizability it does not matter which aspect we choose because they all give the same transformations \citep[][p. 120]{deLeeuw:2006}. Or, more precisely, if a system of transformations satisfies the stationary equations for one correlational aspect, it satisfies the stationary equations for other aspects as well. 
+ 
+\item If bilinearizability holds in the population, the sample correlation coefficients computed by maximizing an aspect have the same standard errors as the sample correlation coefficients computed from known scores \citep[][p. 120]{deLeeuw:2006}. This property will be examined more detailed in Section \ref{sec:sem}. 
+\end{itemize}
+
+The most important implication is based on expression (\ref{eq:statio}): If we substitute the bilinearizability condition (\ref{eq:bilin}) into (\ref{eq:statio}) we find that the linearizing $y$'s satisfy the stationary equation with the corresponding expression (\ref{eq:lm}) for the Lagrange multiplier. This proves the following: If linearizing transformations exist, they will be found by optimal scaling techniques \citep[][p. 447]{deLeeuw:1988a}. Of course if they exist in the population distribution, then they will exist approximately in the sample. But if bilinearizability can be achieved, the corresponding scores can be found \emph{by any aspect optimization}. The degree of linearization can be examined by means of regression plots (see Section \ref{sec:pkg}), or by bootstrap approaches similar to \citet{vanderBurg+deLeeuw:1988}. Regression plots can also be used as diagnostics to study deviations, for example, from multivariate normality.
+
+A concluding remark concerns the importance of bivariate linear regressions within the aspect framework. As mentioned above, it guarantees that different aspects lead to the same quantifications. As a theoretical consequence, this implies that classical asymptotic tests and estimates can still be used on the transformed data. We will further investigate this issue in Section \ref{sec:sem} when using LINEALS for SEM preprocessing. 
+
+\subsection{LINEALS formulation and its optimization}
+In the listing above we state that if bilinearizability is achieved it does not matter which aspect we choose. However, we do not know a priori whether we find linearizing scores or not. Therefore, a somewhat natural aspect is desirable which optimizes a bilinearizability criterion. Such a criterion can be established by means of the following two components \citep{deLeeuw:1988a}: On the one hand we have the elements $r_{jl}$ of the Pearson correlation matrix $R$ which measure the linear association between the variables. On the other hand we can use Pearson's correlation ratio 
+\begin{equation}
+\eta_{jl}^2 = y_j'C_{jl}^{}D_l^{-1}C_{lj}^{}y_j^{} 
+\end{equation}
+for judging non-linear relationships. Note that the correlation ratio is not symmetric. In the case of exact bilinearizability, $\eta_{jl}^2 - r_{jl}^2 = 0$. Now we can define the (non-correlational) aspect
+\begin{equation}
+\label{eq:lineals}
+\phi(\mathbf{Y}) = \sum_{j=1}^m \sum_{l=1}^m (\eta_{jl}^2 - r_{jl}^2) \rightarrow \textrm{min!}
+\end{equation}
+which transforms the variables by minimizing the sum of differences between the correlation ratios and the squared correlation coefficients. Equation \ref{eq:lineals} is also known as LINEALS \citep{deLeeuw:1988a, vanRijckevorsel:1987}. Stating the loss function in this way tackles the linearizing regressions problem in a direct manner unlike correlational aspects or various homals versions. 
+
+Eventually, the value of the LINEALS loss function can be used as total discrepancy index. The smaller the value the closer we achieve bilinearizability. Again, in the case of perfect bilinearizability we get the same optimal scaling with any method of choice and the discrepancy index becomes 0. Perfect bilinearizability is not realistic for real-life applications. In fact, \citet{deLeeuw+Michailidis+Wang:1999} mention that we may be able to find approximate bilinearizability in ordinal data but it is very unlikely in purely nominal variables. However, minimization of (\ref{eq:lineals}) leads to a lower discrepancy compared to other optimal scaling techniques. Therefore, if the aim is to achieve bilinearization, LINEALS should be considered. The difference between the squared correlation coefficients and squared correlation ratio's can also be used to diagnose deviations from linearity.
+
+Minimizing (\ref{eq:lineals}) is relatively simple and no majorization is required. Basically we optimize (\ref{eq:lineals}) over one $y_j$ at the time, keeping all others fixed at current values. Each of these subproblems is a generalized eigenvalue problem \citep{deLeeuw:1988a}. Note that in the current implementation there are
+no cone restrictions on the transformations.
+
+We start with normalized scores $\mathbf{Y}^{(0)}$, compute $r_{jl}^{(0)}$ and $\eta_{jl}^{(0)}$, and, finally, $\phi(\mathbf{Y}^{(0)})$ according to (\ref{eq:lineals}). The last computation reflects the loss update within each iteration $k$.
+
+To update the category scores $y_j$ for a fixed variable $j$ we compute the $k_j \times k_j$ matrix
+\begin{equation}
+\widetilde{U}_j^{(k)} = \mathop{\sum_{l=1}^m}_{l \neq j} C_{jl}\left(D_l^{-1}-2y_l^{(k)} y_l'^{(k)}\right)C_{lj}
+\end{equation}
+and its normalized version 
+\begin{equation}
+U_j^{(k)} = \textrm{NORM}(\widetilde{U}_j^{(k)}).
+\end{equation} 
+Let $\mathbf v_j^{(k)}$ denote the last eigenvector of $U_j^{(k)}$. The score update is given by
+\begin{equation}
+y_j^{(k+1)} = \mathbf v_j'^{(k)}D_j^{1/2}.
+\end{equation} 
+Analogous to the majorization for correlational aspects in Section \ref{sec:maj}, these computations are performed for each variable $j$ separately until $|\phi(\mathbf{Y}^{(k+1)})-\phi(\mathbf{Y}^{(k)})|<\epsilon$. 
+
+
+\subsection{LINEALS as SEM preprocessing}
+\label{sec:sem}
+In the case of categorical (ordinal) data, SEM software such as EQS \citep{Bentler:1995} and LISREL \citep{Joreskog+Sorbom:2005} computes the polychoric correlation matrix based on the indicators. EQS uses the \citet{Lee+Poon+Bentler:1992} approach whereas LISREL provides the PRELIS module \citep{Joreskog:2005}. Note that polychoric correlations require an underlying normality assumption.
+
+\citet{Meijerink:1996} combines optimal scaling with SEM. He proposes an ML estimation for monotonously transformed numerical indicators. The assumption is that by means of the nonlinear transformation multinormality is achieved. This 1-step estimation approach unifies Gifi-based optimal scaling and path modeling.
+
+The starting point of our 2-step LINEALS-SEM approach is the computation of the induced correlations based on the resulting scores $y_j$: 
+\begin{equation}
+\rho_{jl} = \frac{y_j'C_{jl}y_l}{\sqrt{y_j'D_jy_j}\sqrt{y_l'D_ly_l}}
+\end{equation} 
+Now let $F$ denote a corresponding probability distribution. Applying the delta method for determining the standard errors, \citet{deLeeuw:1988b} shows that if the population distribution satisfies bilinearizability, the derivatives of $y_j$ and $y_l$ with respect to $F$ vanish from the expression. This generalizes results from \citet{Steiger+Browne:1984} who show that if the scores $y_j$ and $y_l$ are chosen in a way such that they maximize the correlation coefficient, the distribution of the optimal correlation coefficient (i.e., our induced correlation) is the same as the distribution of the ordinary correlation coefficient between $G_jy_j$ and $G_ly_l$ with the scores considered as fixed numbers \citep{deLeeuw:1988b}. Hence, the asymptotic distribution of the correlation coefficients can be computed as if the optimal transformations are known a-priori (i.e. non-random). 
+
+In order to avoid any distribution assumption we can use the formulas given in \citet{Isserlis:1916} to compute the fourth moment weight matrix which includes standard errors and covariances \citep[see also][p. 450]{deLeeuw:1988a}:
+\begin{eqnarray}
+w_{jl,uv} &= r_{jl,uv} - \frac{1}{2}r_{jl}(r_{jj,uv} + r_{ll,uv}) - \frac{1}{2}r_{uv}(r_{uu,jl} + r_{vv,jl})\nonumber \\
+&+\frac{1}{4}r_{jl}r_{uv}(r_{jj,uu}+r_{jj,vv}+r_{lluu}+r_{llvv})   
+\end{eqnarray}
+with
+\begin{subequations}
+\begin{align}
+r_{jl,uv} &= \frac{s_{jl,uv}}{\sqrt{s_{jj}s_{ll}s_{uu}s_{vv}}},\label{eq:r4}\\
+s_{jl,uv} &= n^{-1}\sum_{i=1}^n(y_{ij}-\overline{y}_j)(y_{il}-\overline{y}_l)(y_{iu}-\overline{y}_u)(y_{iv}-\overline{y}_v).\label{eq:s4}
+\end{align}
+\end{subequations}
+In (\ref{eq:r4}), the $s_{\cdot\cdot}$ represent the sample variances whereas in (\ref{eq:s4}), the $y_{i\cdot}$ represent the $i$-th element of the resulting score matrix and $\overline{y}_{\cdot}$ the corresponding mean. 
+
+
+Now assume that we estimate the induced correlation matrix with LINEALS which, in turn, acts as SEM input. If the SEM software offers an asymptotical distribution free (ADF) approach to estimate the parameters \citep{Browne:1984}, we get consistent and efficient estimates of the structural parameters if the population distribution of the observed variables is bilinearizable. As mentioned above, this theory covers elliptic distributions, mixtures of standard multinormals, Yule's strained multinormals, etc. Relaxations of the multinormal assumption affecting correlation-based methods is studied in \citet{deLeeuw:1983a}. Elaborations concerning the connection with the likelihood theory for multinormal distributed data can be found in \citet{deLeeuw:1988b}. 
+
+
+%----------------------------------- begin package description ----------------------------------
+
+\section{The R package aspect}
+\label{sec:pkg}
+\subsection{Description of main functionalities}
+According to the explanations in Sections \ref{sec:aspect} and \ref{sec:lineals} the \pkg{aspect} package consists of two main functions: \code{corAspect()} and \code{lineals()}. The \code{corAspect()} function for computing correlational aspects provides the argument \code{aspect} which allows the user to specify the type of correlational aspect (according to the listing in Section \ref{sec:asptype} where we also gave the string specifications for the argument). If additional parameters are needed (e.g., exponent, number of eigenvalues, target variable, etc.), they can be passed through \code{"..."} (see corresponding help file). Alternatively, the user can specify his own correlational aspect and pass the whole function to the \code{aspect} argument. Again, an example can be found in the \code{corAspect()} help file. In addition, by means of the \code{level} argument the scale level for each variable can be defined separately (i.e., mixed scale levels are allowed).
+
+Both functions return the final value of the target function, the number of iterations, the resulting (optimally scored) category quantifications, the correlation matrix, and the Burt matrix. Note that \code{corAspect()} returns additionally the eigenvalues of the correlation matrix and \code{lineals()} returns the matrix of correlation ratios. Both functions return an object of class \code{"aspect"} where \code{print}, \code{summary}, and \code{plot} methods (transformation plot, regression plot) are provided.
+
+\subsection{Correlational aspects: Internet terminal data}
+In this section we give examples for correlational aspects using part of the data collected in \citet{Wurzer:2006}. The dataset is about the use of public Internet terminals in Vienna. The eight items we use are the following:
+\begin{itemize}
+\item Do you know at least one place where you can find such a terminal? (yes/no)
+\item Have you already used such a terminal? (yes/no)
+\item How often do you use the Internet on each of the following locations: home, work, cafe, terminal, cellphone? (5-point scales; see below)
+\item Which of the following descriptions fits you best? (I'm here on vacation/I am from here/I'm here on business travel)
+\end{itemize}
+The 5-point items we have the following categories: daily (1), almost daily	(2), several times a week	(3), several times a month (3), once a month (4), less frequently (5). As we see, the first two items are nominal (dichotomous), the next five are ordinal, and the last one is nominal (polytomous) again. 
+
+The first example uses the largest eigenvalue aspect which implies that we are basically doing a multiple CA scaling. The level restrictions on the variables are imposed according to their scale levels. 
+
+\begin{Schunk}
+\begin{Sinput}
+> require("aspect")
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Sinput}
+> data(wurzer)
+> res.cor <- corAspect(wurzer, aspect = "aspectEigen", 
++     level = c(rep("nominal", 2), rep("ordinal", 5), "nominal"))
+> plot(res.cor, plot.type = "transplot", ylim = c(-3.5, 6))
+\end{Sinput}
+\end{Schunk}
+
+To visualize the category transformations we produce transformation plots for each variable. They are given in Figure \ref{fig:trans1}. On the x-axis we have the original (observed) scores, on the y-axis the optimal category scores. We see clearly what the different level restrictions imply (monotonicity for the ordinal variables, no restrictions for the nominal variables). 
+
+\begin{figure}
+\centering
+ \includegraphics[height = 110mm, width = 110mm]{wurzer1.pdf}
+ \includegraphics[height = 110mm, width = 110mm]{wurzer2.pdf}
+\caption{\label{fig:trans1}Transformation plots for eigenvalue aspect.}
+\end{figure}
+
+\begin{figure}
+\centering
+ \includegraphics[height = 110mm, width = 110mm]{wurzer3.pdf}
+ \includegraphics[height = 110mm, width = 110mm]{wurzer4.pdf}
+\caption{\label{fig:trans2}Transformation plots for SMC aspect.}
+\end{figure}
+
+Next, we compute the SMC aspect by setting ``terminal-used'' as target variable. 
+
+\begin{Schunk}
+\begin{Sinput}
+> res.smc <- corAspect(wurzer, aspect = "aspectSMC", 
++     level = c(rep("nominal", 2), rep("ordinal", 5), "nominal"), targvar = 2)
+> plot(res.smc, plot.type = "transplot", ylim = c(-4, 2))
+\end{Sinput}
+\end{Schunk}
+
+Again, we produce transformation plots which are given in Figure \ref{fig:trans2}. We have the same level restrictions but it is obvious that we get different category quantification since we optimize with respect to a different criteria. 
+
+%------------------------------- end coraspect example -----------------------
+
+\subsection{LINEALS-SEM example}
+The data we use to show how LINEALS can be used within an SEM context (as described in Section \ref{sec:sem}) were collected by \citet{Duncan+Duncan+Hops:1998}. The duration of this longitudinal study was 5 years and the number of subjects (adolescents) $n=1204$. At 4 points in time the participants were asked to rate cigarette and marijuana consumption on a 5-point scale:
+\begin{itemize}
+ \item (1) Never consumed.
+ \item (2) Previous but no use over the last 6 months.
+ \item (3) Current use of less than four times a month.
+ \item (4) Current use of between 4 and 29 times a month.
+ \item (5) Current use of 30 or more times a month. 
+\end{itemize}
+Note that this dataset, which is included in the package, provides also the amount alcohol comsumption. For illustrational issues we only use marijuana (POT\_T1, ..., POT\_T4) and cigarettes (CIG\_T1, ..., CIG\_T4).
+
+\begin{Schunk}
+\begin{Sinput}
+> require("sem")
+> require("polycor")
+> data(duncan)
+> duncan.pc <- duncan[, 1:8]
+> head(duncan.pc)
+\end{Sinput}
+\begin{Soutput}
+  POT_T1 POT_T2 POT_T3 POT_T4 CIG_T1 CIG_T2 CIG_T3 CIG_T4
+1      4      5      5      5      3      4      2      2
+2      1      1      1      1      1      1      1      1
+3      1      1      1      3      2      3      3      4
+4      1      1      1      3      2      3      3      4
+5      3      3      5      3      2      3      2      3
+6      3      3      5      3      2      3      2      3
+\end{Soutput}
+\end{Schunk}
+
+On these data we will fit a 2-factor model using the classic polychoric solution on the one hand, and our LINEALS approach on the other hand. We start with the computation of the correlation matrices of the indicators. The polychoric correlation we estimate by means of the \pkg{polycor} package \citep{Fox:2007} which uses ML. For both cases we first print out the resulting correlation matrices.
+
+\begin{Schunk}
+\begin{Sinput}
+> dpc.polychor <- as.data.frame(apply(duncan.pc, 2, 
++     function(xx) cut(xx, c(0, 1, 2, 3, 4, 5))))
+> Rp <- hetcor(dpc.polychor, ML = TRUE)$correlations
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Soutput}
+       POT_T1 POT_T2 POT_T3 POT_T4 CIG_T1 CIG_T2 CIG_T3 CIG_T4
+POT_T1  1.000  0.880  0.839  0.751  0.648  0.594  0.554  0.461
+POT_T2  0.880  1.000  0.914  0.832  0.610  0.635  0.627  0.536
+POT_T3  0.839  0.914  1.000  0.905  0.582  0.613  0.657  0.589
+POT_T4  0.751  0.832  0.905  1.000  0.513  0.576  0.607  0.642
+CIG_T1  0.648  0.610  0.582  0.513  1.000  0.930  0.904  0.813
+CIG_T2  0.594  0.635  0.613  0.576  0.930  1.000  0.942  0.870
+CIG_T3  0.554  0.627  0.657  0.607  0.904  0.942  1.000  0.909
+CIG_T4  0.461  0.536  0.589  0.642  0.813  0.870  0.909  1.000
+\end{Soutput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
+> res.lin <- lineals(duncan.pc, level = "ordinal")
+> Rl <- res.lin$cormat
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Soutput}
+       POT_T1 POT_T2 POT_T3 POT_T4 CIG_T1 CIG_T2 CIG_T3 CIG_T4
+POT_T1  1.000  0.820  0.757  0.700  0.524  0.472  0.440  0.362
+POT_T2  0.820  1.000  0.891  0.799  0.521  0.534  0.520  0.447
+POT_T3  0.757  0.891  1.000  0.881  0.511  0.534  0.551  0.495
+POT_T4  0.700  0.799  0.881  1.000  0.477  0.523  0.534  0.533
+CIG_T1  0.524  0.521  0.511  0.477  1.000  0.898  0.852  0.755
+CIG_T2  0.472  0.534  0.534  0.523  0.898  1.000  0.925  0.842
+CIG_T3  0.440  0.520  0.551  0.534  0.852  0.925  1.000  0.899
+CIG_T4  0.362  0.447  0.495  0.533  0.755  0.842  0.899  1.000
+\end{Soutput}
+\end{Schunk}
+
+Comparing these two correlation matrices we get the interesting result that the LINEALS correlations $R_l$ are uniformly smaller than their polychoric counterparts $R_p$. This has to be examined in more detail in simulation studies (see Discussion) but we can make the following statements. Under population bilinearizability in a discretized multinormal the LINEALS correlations are consistent estimates of the maximal correlation coefficients. The polychorics are consistent estimates of the correlation coefficients in the continuous multinormal, which are actually also the maximal correlation coefficients for the continuous multinormal. The maximal correlations coefficients for the continuous normal are larger than those for the discretized normal. Thus, in the discretized multinormal case, polychorics are larger than LINEALS correlations. 
+
+Before fitting the 2-factor model, we examine bilinearizability of the LINEALS solution which has a loss value of $.248$. Having 8 variables, we have 28 bivariate combinations. For illustration purposes we pick out 3 of them including the regression plot for the observed categories
+
+\begin{Schunk}
+\begin{Sinput}
+> plot(res.lin, plot.type = "regplot", plot.var = c(1, 2))
+> plot(res.lin, plot.type = "regplot", plot.var = c(1, 5))
+> plot(res.lin, plot.type = "regplot", plot.var = c(5, 6))
+\end{Sinput}
+\end{Schunk}
+
+\begin{figure}
+\centering
+ \includegraphics[width = 70mm, height = 70mm]{bilin12u.pdf}
+ \includegraphics[width = 70mm, height = 70mm]{bilin12.pdf}
+ \includegraphics[width = 70mm, height = 70mm]{bilin56u.pdf}
+ \includegraphics[width = 70mm, height = 70mm]{bilin56.pdf}
+ \includegraphics[width = 70mm, height = 70mm]{bilin15u.pdf}
+ \includegraphics[width = 70mm, height = 70mm]{bilin15.pdf}
+\caption{\label{fig:bilin}Regression plots for marijuana and cigarette bilinearizability}
+\end{figure}
+
+Figure~\ref{fig:bilin} represents the bivariate regressions for marijuana consumption T1 vs. T2, for cigarette consumption T1 vs. T2, and for marijuana consumption T1 vs. cigarette consumption T1. On the left hand side we have the unscaled solution based on the original categories. 
+Let us first look at the red lines. For the scores on the x-axis we compute the conditional expectations in y-direction (i.e., the expected scores conditional on the x-value). If we condition on the y-axis and compute the expected scores in x-direction, we get the blue lines. The plot to the left represent the unscaled solutions with the underlying frequency table. The plots on the right hand side show clearly how optimal scaling stretches and squeezes the initial category scores. In the case of perfect bilinearizability we would get straight lines.
+
+Now we start to specify our 2-factor model using the \pkg{sem} package \citep{Fox:2006}. The marijuana responses form the first factor; the cigarette responses the second factor. The loadings are denoted by $\lambda$, the measurement-error variances by $\theta$, the variances of the latent variables by $\phi$, and the correlation between the latent variables by $\rho$.
+
+%<<eval = FALSE>>=
+%dpc.ram <- specify.model()
+%POT -> POT_T1, NA, 1
+%POT -> POT_T2, lam12, NA
+%POT -> POT_T3, lam13, NA
+%POT -> POT_T4, lam14, NA
+%CIG -> CIG_T1, NA, 1
+%CIG -> CIG_T2, lam22, NA
+%CIG -> CIG_T3, lam23, NA
+%CIG -> CIG_T4, lam24, NA
+%POT_T1 <-> POT_T1, th11, NA
+%POT_T2 <-> POT_T2, th12, NA
+%POT_T3 <-> POT_T3, th13, NA
+%POT_T4 <-> POT_T4, th14, NA
+%CIG_T1 <-> CIG_T1, th21, NA
+%CIG_T2 <-> CIG_T2, th22, NA
+%CIG_T3 <-> CIG_T3, th23, NA
+%CIG_T4 <-> CIG_T4, th24, NA
+%POT <-> POT, phi1, NA
+%CIG <-> CIG, phi2, NA
+%POT <-> CIG, rho1, NA
+%@
+
+Now for both correlation matrices $R_p$ and $R_l$ we fit the same 2-factor model. 
+\begin{Schunk}
+\begin{Sinput}
+> sem.pol <- sem(dpc.ram, Rp, N = 1204)
+> sem.lin <- sem(dpc.ram, Rl, N = 1204)
+\end{Sinput}
+\end{Schunk}
+
+Note that the \pkg{sem} package does not provide ADF estimation but rather uses ML assuming multinormality. This is somewhat unfortunate for the LINEALS approach since we did not want to impose any distribution assumption on our transformed data. Therefore, a better way would be to use SEM software such as EQS which does ADF. Since we are somewhat reluctant to leave the R environment, we have to deal with this shortcoming. However, for the purpose of illustration also ML does the job and the resulting parameter estimates and their standard errors are given in Table~\ref{tab:sempar}. 
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|c|r|r||r|r|}
+\hline
+Parameter & polychoric (est.) & polychoric (se.) & LINEALS (est.) & LINEALS (se.) \\
+\hline
+${\lambda_{11}}^*$ &1 &	 -	& 1 &	- \\
+$\lambda_{12}$ &1.078 &	.0208 	& 1.142 & .0279 	\\
+$\lambda_{13}$ &1.117 &	.0206 	& 1.190 & .0284 	\\
+$\lambda_{14}$ &1.040 &	.0226 	& 1.105 & .0292 	\\
+${\lambda_{21}}^*$ &1 &	-	& 1 & 	-	\\
+$\lambda_{22}$ &1.038 &	 .0136 & 1.071 & .0180 	\\
+$\lambda_{23}$ &1.042 &	.0138 	& 1.082 & .0187 	\\
+$\lambda_{24}$ &.970 &	.0172 	& 1.002 & .0213 	\\
+$\theta_{11}$ & 0.237 &	.0115 	 & .343 & .0160 	\\
+$\theta_{12}$ & 0.113 &	.0071 	& .143 & .0086 	\\
+$\theta_{13}$ & 0.049 &	.0054 	& .070 & .0067 	\\
+$\theta_{14}$ & 0.174 &	.0085 	& .198 & .0098 	\\
+$\theta_{21}$ & 0.124 &	.0065 	 & .198 & .0102 	\\
+$\theta_{22}$ & 0.057 &	.0045 	& .079 & .0064 	\\
+$\theta_{23}$ & 0.050 &	.0043 	& .061 & .0059 	\\
+$\theta_{24}$ & 0.176 &	.0084 	& .194 & .0098 	\\
+$\phi_1$ & .763 & .0402 & .657 & .0391 	\\
+$\phi_2$ & .549 & .0407 & .802 & .0405 	\\
+$\rho$ & .549 & .0307 & .428 & .0272 	\\
+\hline
+\end{tabular}
+\caption{\label{tab:sempar}SEM parameter for polychoric and LINEALS}
+\end{center}
+\end{table}
+
+By looking at common fit indices such as the \emph{comparative fit index} \citep[CFI;][]{Bentler:1990} and the \emph{root mean squared error of approximation} (RMSEA) we get a $\textrm{CFI}_p = .875$ and $\textrm{RMSEA}_p = .290$ for the polychoric $R_p$. With LINEALS preprocessing and the resulting $R_l$ input matrix we get $\textrm{CFI}_l = .932$ and $\textrm{RMSEA}_l = .189$. Taking into account common rules of thumb (e.g. $\textrm{CFI} > .90$) we could conclude that with LINEALS preprocessing we get a satisfactory fit whereas with polychoric correlations we do not. However, for this example we see that by LINEALS preprocessing we get a better fit. 
+
+
+\section{Discussion}
+In this paper we presented the aspect methodology and a corresponding package in \proglang{R}. Aspect represents a comprehensive framework for (correlational) multivariate analysis. The aspects we presented are only a convenient set of functions to be optimized. The package is programmed in a way that the user can provide his own \code{myAspect()} functions as an argument. 
+
+Considering each variable as categorical is not very efficient when having many categories, as typically in the numerical case. Therefore, in a future update we will use splines to make it more efficient. The corresponding theory is given in several chapters in the edited volume by \citet{vanRijckevorsel+deLeeuw:1988}.  
+
+Using LINEALS for SEM preprocessing of categorical data including level restrictions seems to be a promising approach. Though, simulation studies are needed for examining bilinearizability in practice. As mentioned above, we can expect approximate linearization in the situation of ordinal data. The situation of mixed scale levels, the effect of different number of categories, as well as examining the LINEALS performance for underlying multivariate normal and non-normal distribution assumptions are substantial practical questions to be studied.  
+
+An even more sophisticated approach for optimal scaling and SEM would be to provide a 1-step procedure. \citet{Meijerink:1996} presents such an approach for numerical variables based on Box-Cox type of methods (with spline transformations). We could define an aspect of the form $\phi(R(\mathbf Y))=\min_{\theta} \log \det \Gamma(\theta) + \textrm{tr}\ \Gamma^{-1}(\theta)R(\mathbf Y)$ with $\theta$ as structural parameters. Note that this is again concave in \(R\). The derivative of this aspect is simply $\Gamma^{-1}$. This aspect function can be calculated by fitting any correlation structure model with the \pkg{sem} package or any other SEM software. Thus, just apply the SEM computations iteratively to optimally rescaled correlation matrices. The theory for the standard errors and Chi-square statistics as elaborated in Section \ref{sec:sem} holds. 
+
+
+\bibliography{aspect}
+\end{document}
+
+
