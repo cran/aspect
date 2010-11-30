@@ -112,6 +112,7 @@ function(data, aspect = "aspectSum", level = "nominal", itmax = 100, eps=1e-6, .
     colnames(y[[i]]) <- "score"
   }
  
+  r <- cor(scoremat)
   
   result <- list(loss = f, catscores = y, cormat = r, eigencor = eigen(r,only.values=TRUE)$values, indmat = dummy.mat, scoremat = scoremat, data = data, burtmat = burt, niter = itel, call = match.call())
   class(result) <- "aspect"

@@ -27,7 +27,7 @@ lineals(data, level = "nominal", itmax = 100, eps = 1e-06)
   \item{niter}{Number of iterations}
 }
 \references{
-Mair, P., & de Leeuw, J. (2008). Scaling variables by optimizing correlational and non-correlational aspects in R. Journal of Statistical Software, forthcoming.
+Mair, P., & de Leeuw, J. (2008). Scaling variables by optimizing correlational and non-correlational aspects in R. Journal of Statistical Software, Volume 32, Issue 9..
 
 de Leeuw, J. (1988). Multivariate analysis with linearizable regressions. Psychometrika, 53, 437-454.
 

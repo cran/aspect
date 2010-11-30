@@ -46,7 +46,7 @@ Alternatively, the user can write his own aspect, e.g. the function \code{myAspe
   \item{niter}{Number of iterations}
 }
 \references{
-Mair, P., & de Leeuw, J. (2008). Scaling variables by optimizing correlational and non-correlational aspects in R. Journal of Statistical Software, forthcoming.
+Mair, P., & de Leeuw, J. (2010). Scaling variables by optimizing correlational and non-correlational aspects in R. Journal of Statistical Software, Volume 32, Issue 9.
 
 de Leeuw, J. (1988). Multivariate analysis with optimal scaling. In S. Das Gupta and J.K. Ghosh, Proceedings of the International Conference on Advances in Multivariate Statistical Analysis, pp. 127-160. Calcutta: Indian Statistical Institute.
 }

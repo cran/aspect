@@ -11,8 +11,8 @@ Aspects of Multivariables
 \tabular{ll}{
 Package: \tab aspect\cr
 Type: \tab Package\cr
-Version: \tab 0.8-1\cr
-Date: \tab 2009-03-23\cr
+Version: \tab 1.0-2\cr
+Date: \tab 2013-11-30\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
 }
@@ -23,7 +23,7 @@ Jan de Leeuw, Patrick Mair
 Maintainer: Jan de Leeuw <deleeuw@stat.ucla.edu>
 }
 \references{
-Mair, P., & de Leeuw, J. (2008). A general framework for multivariate analysis with optimal scaling: The R package aspect. Journal of Statistical Software, forthcoming.
+Mair, P., & de Leeuw, J. (2010). A general framework for multivariate analysis with optimal scaling: The R package aspect. Journal of Statistical Software, 32(9).
 }
 
 \keyword{ package }
