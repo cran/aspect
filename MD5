@@ -1,5 +1,4 @@
-94d55d512a9ba36caa9b7df079bae19f *COPYING
-d9c7c3fe910a8e1be18f34b7c32750ad *DESCRIPTION
+0639d0e68fc3eb5589a4382ffe9f1348 *DESCRIPTION
 fe529b8a585fc305b04d1ce22006517e *NAMESPACE
 534bc559bc14e8124c582a2cce7ebe3f *R/aspect-internal.R
 4f68ac0638119c5ca5eeda35331f090e *R/aspectAbs.R
@@ -35,9 +34,9 @@ e8d0b93c0eacb95d43766a4c50c951f0 *R/summary.aspect.R
 25d7fe555729df0e0eaa309c88bfd971 *R/twoDirections.R
 7cf9c014c4a3ac52db8bca4c65aa5f2a *R/wNorm.R
 534f0252d72b07e6edfaceb2162928c5 *R/weightedGramSchmidt.R
-373914eebe22f2a996ca382227767b29 *data/duncan.rda
-16466df35967a22066299e6f7b108c96 *data/galo.rda
-a81ebbfb608f517f900cd37ca98af4e1 *data/wurzer.rda
+2b4f962c55ef27a44353f0d208c558bb *data/duncan.rda
+8453ddb697ecd274c147910319f186ae *data/galo.rda
+92ab30df44a80c93c0721f8bb9029507 *data/wurzer.rda
 24891b7d6204a39f2e6ad40f216358b6 *inst/COPYRIGHTS
 ab41ba5158a4420552e5c631c89161e0 *man/aspect-package.Rd
 f4408be07f1313ded478687bde9f7195 *man/corAspect.Rd
