@@ -1,4 +1,4 @@
-import("stats", "graphics")
+import("stats", "graphics", "grDevices")
 export(corAspect)
 export(lineals)
 
