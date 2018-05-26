@@ -4,8 +4,7 @@
 \docType{data}
 \title{Internet terminals}
 \description{
-The dataset is about the use of public Internet terminals. For this package 
-we extracted a subset of 8 items. 
+The dataset is about the use of public Internet terminals. For this package we extracted a subset of 8 items. 
 }
 \usage{wurzer}
 \format{A data frame (n = 215) with the following items:
@@ -25,7 +24,7 @@ week (3), several times a month (3), once a month (4), less frequently (5).
 }
 
 \references{
-Wurzer M (2006). An Application of congural frequency analysis: Evaluation of the Usage of Internet Terminals. Master's thesis, University of Vienna, Austria.
+Wurzer, M. (2006). An Application of Configural Frequency Analysis: Evaluation of the Usage of Internet Terminals. Master's thesis, University of Vienna, Austria.
 }
 
 
