@@ -46,7 +46,7 @@ Alternatively, the user can write his own aspect, e.g. the function \code{myAspe
   \item{niter}{Number of iterations}
 }
 \references{
-Mair, P., & de Leeuw, J. (2010). Scaling variables by optimizing correlational and non-correlational aspects in R. Journal of Statistical Software, Volume 32, Issue 9.
+Mair, P., & De Leeuw, J. (2010). Scaling variables by optimizing correlational and non-correlational aspects in R. Journal of Statistical Software, 32(9), 1-23. \doi{10.18637/jss.v032.i09}
 
 de Leeuw, J. (1988). Multivariate analysis with optimal scaling. In S. Das Gupta and J.K. Ghosh, Proceedings of the International Conference on Advances in Multivariate Statistical Analysis, pp. 127-160. Calcutta: Indian Statistical Institute.
 }
@@ -84,13 +84,6 @@ res.smc
 ## maximizes the sum of SMC
 res.sumsmc <- corAspect(galo[,1:4], aspect = "aspectSumSMC")
 res.sumsmc
-
-## some user-defined non-sense aspect
-## first list element corresponds to function value, second to first derivative
-myAspect <- function(r, a = 1, b = 1) list(a*b*r, matrix(a*b, nrow = nrow(r), ncol = ncol(r)))
-res.my <- corAspect(galo[,1:4], aspect = myAspect, a = 2, b = 4)
-res.my
-
 
 
 }

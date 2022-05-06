@@ -1,4 +1,4 @@
-60a589c5189011eaea5c282fad6edef7 *DESCRIPTION
+47e705014c5a08be192b9ead7ab781f4 *DESCRIPTION
 cf7a886ea8e9f143bad44c71c075a0e1 *NAMESPACE
 534bc559bc14e8124c582a2cce7ebe3f *R/aspect-internal.R
 4f68ac0638119c5ca5eeda35331f090e *R/aspectAbs.R
@@ -34,13 +34,14 @@ e8d0b93c0eacb95d43766a4c50c951f0 *R/summary.aspect.R
 25d7fe555729df0e0eaa309c88bfd971 *R/twoDirections.R
 7cf9c014c4a3ac52db8bca4c65aa5f2a *R/wNorm.R
 534f0252d72b07e6edfaceb2162928c5 *R/weightedGramSchmidt.R
+1961639f6f4f7f9efffa91b624b3d060 *build/partial.rdb
 2b4f962c55ef27a44353f0d208c558bb *data/duncan.rda
 8453ddb697ecd274c147910319f186ae *data/galo.rda
 92ab30df44a80c93c0721f8bb9029507 *data/wurzer.rda
 24891b7d6204a39f2e6ad40f216358b6 *inst/COPYRIGHTS
-f4408be07f1313ded478687bde9f7195 *man/corAspect.Rd
+4fc5d77000b3f8cfba9de878c550a00d *man/corAspect.Rd
 3651ce2d5ab004211d1384ae73854d8f *man/duncan.Rd
 93f713246a880ac2552d1edd7fc67a40 *man/galo.Rd
-058a3e1d72315b25ba8841e9ec80208a *man/lineals.Rd
+f6736d3210e287dd7fc6a1eea8c9979b *man/lineals.Rd
 94368588dd21d50df1eaff54a003eb2a *man/plot.aspect.Rd
 dada4aa5f35792ee6b987fb0da049410 *man/wurzer.Rd
