@@ -1,0 +1,10 @@
+bibentry(bibtype="Article",
+  title   = "A General Framework for Multivariate Analysis with Optimal Scaling: The R Package aspect",
+  author = c(person(given = "Patrick", family = "Mair", email = "mair@fas.harvard.edu", comment = c(ORCID = "0000-0003-0100-6511")), person(given = "Jan", family = "de Leeuw", email = "jdeleeuw@icloud.com")),
+  journal = "Journal of Statistical Software",
+  year    = "2010",
+  page    = "1--23",
+  volume  = "32",
+  issue   = "9",
+  doi = "10.18637/jss.v031.i09"
+)

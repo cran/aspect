@@ -1,4 +1,4 @@
-47e705014c5a08be192b9ead7ab781f4 *DESCRIPTION
+ef312c0d6d1fa569f35a072d25663599 *DESCRIPTION
 cf7a886ea8e9f143bad44c71c075a0e1 *NAMESPACE
 534bc559bc14e8124c582a2cce7ebe3f *R/aspect-internal.R
 4f68ac0638119c5ca5eeda35331f090e *R/aspectAbs.R
@@ -34,10 +34,11 @@ e8d0b93c0eacb95d43766a4c50c951f0 *R/summary.aspect.R
 25d7fe555729df0e0eaa309c88bfd971 *R/twoDirections.R
 7cf9c014c4a3ac52db8bca4c65aa5f2a *R/wNorm.R
 534f0252d72b07e6edfaceb2162928c5 *R/weightedGramSchmidt.R
-1961639f6f4f7f9efffa91b624b3d060 *build/partial.rdb
+b52aabe9a2757fc86742763db9dafc9b *build/partial.rdb
 2b4f962c55ef27a44353f0d208c558bb *data/duncan.rda
 8453ddb697ecd274c147910319f186ae *data/galo.rda
 92ab30df44a80c93c0721f8bb9029507 *data/wurzer.rda
+a61de8c7b863ee54ba9faa2466260014 *inst/CITATION
 24891b7d6204a39f2e6ad40f216358b6 *inst/COPYRIGHTS
 4fc5d77000b3f8cfba9de878c550a00d *man/corAspect.Rd
 3651ce2d5ab004211d1384ae73854d8f *man/duncan.Rd
